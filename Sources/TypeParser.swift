@@ -30,11 +30,13 @@ private let closureRegex = try! NSRegularExpression(pattern: "(\\w+)\\s+\\(\\^\\
 
 private class ParserType {
     var name: String
+    var isNullable: Bool
     var generics: [ParserType]
     weak var superType: ParserType?
 
     init(superType: ParserType? = nil) {
         name = ""
+        isNullable = false
         generics = []
         self.superType = superType
     }
@@ -72,8 +74,31 @@ class TypeParser {
             let char = string[index]
 
             switch char {
-            case "0"..."9", "a"..."z", "A"..."Z":
-                buffer.append(char)
+            case "0"..."9", "a"..."z", "A"..."Z", "_":
+                let kindof = "__kindof"
+                let const = "const"
+                let nullables = ["nullable", "__nullable"]
+                let restString = string[index..<string.endIndex]
+                var shouldSkip = false
+
+                for nullable in nullables where restString.hasPrefix(nullable) {
+                    currentType.isNullable = true
+                    index = string.index(index, offsetBy: nullable.count - 1)
+                    shouldSkip = true
+                    break
+                }
+
+                if !shouldSkip {
+                    if restString.hasPrefix(kindof) {
+                        index = string.index(index, offsetBy: kindof.count - 1)
+                    } else if restString.hasPrefix(const) {
+                        currentType.name = "UnsafePointer"
+                        addGenericType(to: &currentType)
+                        index = string.index(index, offsetBy: const.count - 1)
+                    } else {
+                        buffer.append(char)
+                    }
+                }
             case "<":
                 copyIfNeeded(&buffer, to: currentType)
                 addGenericType(to: &currentType)
@@ -86,14 +111,6 @@ class TypeParser {
                 addGenericType(to: &currentType)
             case " ":
                 copyIfNeeded(&buffer, to: currentType)
-            case "_":
-                let attribute = "__kindof"
-
-                if string[index..<string.endIndex].hasPrefix(attribute) {
-                    index = string.index(index, offsetBy: attribute.count - 1)
-                } else {
-                    buffer.append(char)
-                }
             default: break
             }
 
@@ -155,6 +172,10 @@ class TypeParser {
             } else {
                 name += "\(mainName)<\(generics.joined(separator: ", "))>"
             }
+        }
+
+        if type.isNullable {
+            name += "?"
         }
 
         return name

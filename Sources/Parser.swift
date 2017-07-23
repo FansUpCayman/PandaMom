@@ -25,6 +25,11 @@
 
 import Foundation
 
+private let typePattern = "[\\w\\s\\*<>_,]+"
+private let methodPartPattern = "(\\w+):\\((\(typePattern))\\)(\\w+)"
+private let macrosPattern = "[\\w\\s\\d\\(\\)_,]*"
+private let fullMacrosPattern = "(\(macrosPattern)(?:\".*\")?\(macrosPattern))"
+
 private let interfaceRegex = try! NSRegularExpression(
     pattern: "(CLASS.+\\n?)?@(?:interface|protocol)\\s+(\\w+)[^;\\n]*$",
     options: [.caseInsensitive, .anchorsMatchLines]
@@ -32,6 +37,11 @@ private let interfaceRegex = try! NSRegularExpression(
 private let endRegex = try! NSRegularExpression(pattern: "@end", options: .caseInsensitive)
 private let propertyClosureRegex = propertyRegex(isClosure: true)
 private let propertyTypeRegex = propertyRegex(isClosure: false)
+private let methodRegex = try! NSRegularExpression(
+    pattern: "-\\s*\\(void\\)set((?:\(methodPartPattern)\\s*)+)\(fullMacrosPattern);",
+    options: .caseInsensitive
+)
+private let methodPartRegex = try! NSRegularExpression(pattern: methodPartPattern, options: .caseInsensitive)
 
 private func propertyRegex(isClosure: Bool) -> NSRegularExpression {
     var string = "@property\\s*(?:\\(([\\w\\s,=]+)\\))?\\s*"
@@ -41,17 +51,28 @@ private func propertyRegex(isClosure: Bool) -> NSRegularExpression {
     } else {
         let kindof = "(?:__kindof\\s+)?"
         let type = "(?:unsigned int|[\\w_]+)"
-        let generics = "(?:<[\\w\\s\\*<>_,]+>)?"
+        let generics = "(?:<\(typePattern)>)?"
         let cComment = "(?:/\\*.*\\*/)?"
         string += "\(kindof)(\(type)\\s*\(generics))\\s*\(cComment)\\*?\\s*(\\w+)"
     }
 
-    let macros = "[\\w\\s\\d\\(\\)_,]*"
-    string += "\\s*(\(macros)(?:\".*\")?\(macros));"
+    string += "\\s*\(fullMacrosPattern);"
     return try! NSRegularExpression(pattern: string, options: .caseInsensitive)
 }
 
 class Parser {
+    private struct Member {
+        var required: [Property]
+        var optional: [Property]
+        var methods: [Method]
+
+        init() {
+            required = []
+            optional = []
+            methods = []
+        }
+    }
+
     func parse(_ string: String) -> [String: Type] {
         var types = [String: Type]()
         var index = 0
@@ -69,23 +90,27 @@ class Parser {
             let endRange = endRegex.rangeOfFirstMatch(in: string, range: NSRange(restRange))
 
             let scopeRange = result.range.upperBound..<endRange.location
-            let properties = parseProperties(string, range: NSRange(scopeRange), type: type)
+            let member = parseMembers(string, range: NSRange(scopeRange), type: type)
 
-            if !properties.required.isEmpty {
-                types[type.name, default: type].add(properties.required)
+            if !member.required.isEmpty {
+                types[type.name, default: type].add(member.required)
             }
 
-            if !properties.optional.isEmpty {
+            if !member.optional.isEmpty {
                 if let names = type.typesIfOptional {
                     for name in names {
                         let newType = Type(name: name)
-                        types[name, default: newType].add(properties.optional)
+                        types[name, default: newType].add(member.optional)
                     }
                 } else {
-                    for property in properties.optional {
+                    for property in member.optional {
                         print("!!! \(type.name).\(property.name) ignored")
                     }
                 }
+            }
+
+            if !member.methods.isEmpty {
+                types[type.name, default: type].add(member.methods)
             }
 
             index = endRange.upperBound
@@ -94,10 +119,9 @@ class Parser {
         return types
     }
 
-    private func parseProperties(_ string: String, range: NSRange, type: Type)
-        -> (required: [Property], optional: [Property]) {
+    private func parseMembers(_ string: String, range: NSRange, type: Type) -> Member {
         var isRequired = true
-        var properties = (required: [Property](), optional: [Property]())
+        var member = Member()
 
         (string as NSString).enumerateSubstrings(in: range, options: .byLines) { line, _, _, _ in
             guard let line = line else { return }
@@ -106,26 +130,50 @@ class Parser {
                 isRequired = true
             } else if line.hasPrefix("@optional") {
                 isRequired = false
-            }
-
-            guard line.hasPrefix("@property") else { return }
-            let regex = line.contains("^") ? propertyClosureRegex : propertyTypeRegex
-            guard let result = regex.firstMatch(in: line, range: NSRange(0..<line.length)) else { return }
-
-            let substrings = line.substrings(result)
-            let property = Property(attributes: substrings[1],
-                                    type: substrings[2],
-                                    name: substrings[3],
-                                    macros: substrings[4])
-            guard type.isPropertyValid(property) else { return }
-
-            if isRequired {
-                properties.required.append(property)
-            } else {
-                properties.optional.append(property)
+            } else if line.hasPrefix("@property") {
+                self.parseProperties(line, type: type, required: isRequired, member: &member)
+            } else if line.hasPrefix("-") {
+                self.parseMethods(line, type: type, member: &member)
             }
         }
 
-        return properties
+        return member
+    }
+
+    private func parseProperties(_ line: String, type: Type, required: Bool, member: inout Member) {
+        let regex = line.contains("^") ? propertyClosureRegex : propertyTypeRegex
+        guard let result = regex.firstMatch(in: line, range: NSRange(0..<line.length)) else { return }
+
+        let substrings = line.substrings(result)
+        let property = Property(attributes: substrings[1],
+                                type: substrings[2],
+                                name: substrings[3],
+                                macros: substrings[4])
+        guard type.isPropertyValid(property) else { return }
+
+        if required {
+            member.required.append(property)
+        } else {
+            member.optional.append(property)
+        }
+    }
+
+    private func parseMethods(_ line: String, type: Type, member: inout Member) {
+        guard let result = methodRegex.firstMatch(in: line, range: NSRange(0..<line.length)) else { return }
+        let substrings = line.substrings(result)
+        let parts = substrings[1]
+        var method = Method(parts: [], macros: substrings.last!)
+
+        methodPartRegex.enumerateMatches(in: parts, range: NSRange(0..<parts.count)) { result, _, _ in
+            guard let result = result else { return }
+            let substrings = parts.substrings(result)
+            let part = Method.Part(name: substrings[1],
+                                   type: substrings[2],
+                                   parameter: substrings[3])
+            method.parts.append(part)
+        }
+
+        guard type.isMethodValid(method) else { return }
+        member.methods.append(method)
     }
 }

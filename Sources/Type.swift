@@ -31,6 +31,7 @@ struct Type {
     var name: String
     var macros: String
     var properties: [Property]
+    var methods: [Method]
 
     var isValid: Bool {
         return !isDeprecated && !Config.excludedTypes.contains(name)
@@ -54,14 +55,19 @@ struct Type {
         return imports
     }
 
-    init(name: String, macros: String = "", properties: [Property] = []) {
+    init(name: String, macros: String = "") {
         self.name = name
         self.macros = macros
-        self.properties = properties
+        properties = []
+        methods = []
     }
 
     mutating func add(_ p: [Property]) {
         properties.append(contentsOf: p)
+    }
+
+    mutating func add(_ m: [Method]) {
+        methods.append(contentsOf: m)
     }
 
     func isPropertyValid(_ property: Property) -> Bool {
@@ -70,6 +76,11 @@ struct Type {
             !property.macros.contains("UIKIT_AVAILABLE_TVOS_ONLY") &&
             !property.isDeprecated &&
             !Config.excludedProperties.contains(fullname(property.name))
+    }
+
+    func isMethodValid(_ method: Method) -> Bool {
+        return !method.isDeprecated &&
+            !Config.excludedMethods.contains(fullname("set" + method.parts[0].name))
     }
 
     func swiftType(of property: Property) -> String {
@@ -94,12 +105,46 @@ struct Type {
         if let result = getterRegex.firstMatch(in: attributes, range: NSRange(0..<attributes.count)) {
             return attributes.substrings(result)[1]
         } else {
-            return Config.nameMap[fullname(property.name)] ?? property.name
+            return Config.propertyNameMap[fullname(property.name)] ?? property.name
         }
     }
 
-    private func fullname(_ propertyName: String) -> String {
-        return "\(name).\(propertyName)"
+    func swiftNames(of part: Method.Part) -> (String, String?) {
+        if let n = Config.methodNameMap[fullname("set" + part.name)] {
+            return (n, nil)
+        } else if part.name.hasSuffix("AtIndex") {
+            return (part.name.substring(to: part.name.index(-5)), nil)
+        } else {
+            let prepositions = ["For", "With", "In"]
+
+            for preposition in prepositions {
+                var index: String.Index?
+
+                if part.name.hasPrefix(preposition.lowercased()) {
+                    index = part.name.index(preposition.count)
+                } else if let range = part.name.range(of: preposition) {
+                    index = range.upperBound
+                }
+
+                guard let i = index, part.name[i].isUppercase else { continue }
+                let suffix = part.name.substring(from: i).lowercased()
+
+                guard part.type.lowercased().contains(suffix) else { continue }
+
+                if part.name.first!.isUppercase {
+                    let endIndex = part.name.index(i, offsetBy: -preposition.count)
+                    return (part.name.substring(to: endIndex), preposition.lowercased())
+                } else {
+                    return (part.name.substring(to: i), nil)
+                }
+            }
+
+            return (part.name, nil)
+        }
+    }
+
+    private func fullname(_ subName: String) -> String {
+        return "\(name).\(subName)"
     }
 }
 

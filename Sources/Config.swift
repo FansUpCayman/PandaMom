@@ -94,12 +94,16 @@ struct Config {
         "UIGestureRecognizer.state",
     ]
 
+    static let excludedMethods: Set = [
+        "UITextChecker.setIgnoredWords",
+    ]
+
     static let optionalMap = [
         "UITextInput": ["UITextField", "UITextView"],
         "UITextInputTraits": ["UISearchBar", "UITextField", "UITextView"],
     ]
 
-    static let nameMap = [
+    static let propertyNameMap = [
         "UIBezierPath.CGPath": "cgPath",
         "UIDocumentInteractionController.URL": "url",
         "UIDocumentInteractionController.UTI": "uti",
@@ -109,6 +113,15 @@ struct Config {
         "UIPopoverController.popoverContentSize": "contentSize",
         "UIPopoverController.popoverLayoutMargins": "layoutMargins",
         "UIView.maskView": "mask",
+    ]
+
+    static let methodNameMap = [
+        "CALayer.setNeedsDisplayInRect": "NeedsDisplayIn",
+        "UINavigationItem.setLeftBarButtonItem": "LeftBarButton",
+        "UINavigationItem.setRightBarButtonItem": "RightBarButton",
+        "UIPopoverController.setContentViewController": "ContentView",
+        "UIPopoverController.setPopoverContentSize": "ContentSize",
+        "UIView.setNeedsDisplayInRect": "NeedsDisplay",
     ]
 
     static let frameworkMap = [

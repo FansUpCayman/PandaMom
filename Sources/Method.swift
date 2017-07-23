@@ -1,5 +1,5 @@
 //
-//  StringExtensions.swift
+//  Method.swift
 //  PandaMom
 //
 //  Copyright (c) 2017 Javier Zhang (https://wordlessj.github.io/)
@@ -25,34 +25,48 @@
 
 import Foundation
 
-extension Character {
-    var isLowercase: Bool {
-        return ("a"..."z").contains(self)
+struct Method {
+    enum MultipleType: String {
+        case controlState = "UIControlState"
+        case barMetrics = "UIBarMetrics"
+
+        var values: [String] {
+            switch self {
+            case .controlState: return ["normal", "highlighted", "selected", "disabled"]
+            case .barMetrics: return ["default", "compact", "defaultPrompt", "compactPrompt"]
+            }
+        }
+
+        var methodName: String {
+            var name = rawValue
+            name.removeFirst(2)
+            return "for" + name
+        }
     }
 
-    var isUppercase: Bool {
-        return ("A"..."Z").contains(self)
+    struct Part {
+        var name: String
+        var type: String
+        var parameter: String
+
+        var swiftType: String {
+            let parser = TypeParser()
+            return parser.parse(type).name
+        }
+    }
+
+    var parts: [Part]
+    var macros: String
+
+    var multipleType: MultipleType? {
+        if parts.count == 2, let type = MultipleType(rawValue: parts[1].type) {
+            return type
+        } else {
+            return nil
+        }
     }
 }
 
-extension String {
-    var length: Int {
-        return (self as NSString).length
-    }
-
-    func index(_ offset: Int) -> Index {
-        return index(offset >= 0 ? startIndex : endIndex, offsetBy: offset)
-    }
-
-    func substrings(_ result: NSTextCheckingResult) -> [String] {
-        return (0..<result.numberOfRanges).map { index in
-            let range = result.range(at: index)
-
-            if range.location != NSNotFound {
-                return (self as NSString).substring(with: range)
-            } else {
-                return ""
-            }
-        }
-    }
+extension Method: Available {
+    var isClass: Bool { return false }
 }
