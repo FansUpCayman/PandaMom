@@ -38,7 +38,7 @@ class Generator {
         }
 
         for m in type.methods {
-            string += methodForState(m, type: type)
+            string += methodForMultiple(m, type: type)
         }
 
         string.removeLast()
@@ -126,7 +126,7 @@ class Generator {
         return string
     }
 
-    private func methodForState(_ method: Method, type: Type) -> String {
+    private func methodForMultiple(_ method: Method, type: Type) -> String {
         guard let multipleType = method.multipleType else { return "" }
         let values = multipleType.values
         let firstPart = method.parts[0]
@@ -143,13 +143,13 @@ class Generator {
         string += """
                 @discardableResult
                 public func \(methodName)(
-                    \(fullParameterName(values[0])): \(parameterType)
+                    _ \(parameterName(values[0])): \(parameterType)
             """
 
         for value in values.dropFirst() {
             string += """
                 ,
-                        \(fullParameterName(value)): \(parameterType)? = nil
+                        \(value): \(parameterType)? = nil
                 """
         }
 
@@ -161,7 +161,7 @@ class Generator {
 
         for value in values {
             string += """
-                            \(value): \(parameterName(value) ?? value),\n
+                            \(value): \(parameterName(value)),\n
                 """
         }
 
@@ -196,15 +196,11 @@ class Generator {
         return string.replacingCharacters(in: range, with: string[range].lowercased())
     }
 
-    private func fullParameterName(_ name: String) -> String {
-        return parameterName(name).map { "\(name) \($0)" } ?? name
-    }
-
-    private func parameterName(_ name: String) -> String? {
+    private func parameterName(_ name: String) -> String {
         if name == "default" {
             return "d"
         } else {
-            return nil
+            return name
         }
     }
 }
