@@ -70,112 +70,137 @@ class Generator {
     }
 
     private func property(_ property: Property, type: Type) -> String {
-        var string = availableAttribute(of: property, indent: true)
-        let name = type.swiftName(of: property)
+        let available = availableAttribute(of: property, indent: true)
+        let methodName = type.swiftNameWithoutPrefix(of: property)
+        let originalName = type.swiftName(of: property)
         let propertyType = type.swiftType(of: property)
         let attributes = property.isEscaping ? "@escaping " : ""
 
-        string += """
-                @discardableResult
-                public func \(name)(_ value: \(attributes)\(propertyType)) -> PandaChain {
-                    object.\(name) = value
-                    return self
-                }\n\n
-            """
-
-        return string
+        return fullFunction(type: type, methodName: methodName, originalName: originalName) { name in
+            available + """
+                    @discardableResult
+                    public func \(name)(_ value: \(attributes)\(propertyType)) -> PandaChain {
+                        object.\(originalName) = value
+                        return self
+                    }\n\n
+                """
+        }
     }
 
     private func method(_ method: Method, type: Type) -> String {
-        var string = availableAttribute(of: method, indent: true)
+        let available = availableAttribute(of: method, indent: true)
         let firstPart = method.parts[0]
         let (firstName, firstSubName) = type.swiftNames(of: firstPart)
-        let methodName = initialLowercase(firstName)
+        let methodName = firstName.initialLowercased()
 
-        string += """
-                @discardableResult
-                public func \(methodName)(\(firstSubName ?? "_") \(firstPart.parameter): \(firstPart.swiftType)
-            """
+        return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
+            var string = available
 
-        for part in method.parts.dropFirst() {
-            let name = type.swiftNames(of: part).0
+            string += """
+                    @discardableResult
+                    public func \(name)(\(firstSubName ?? "_") \(firstPart.parameter): \(firstPart.swiftType)
+                """
 
-            if name == part.parameter {
-                string += ", \(name): \(part.swiftType)"
-            } else {
-                string += ", \(name) \(part.parameter): \(part.swiftType)"
+            for part in method.parts.dropFirst() {
+                let name = type.swiftNames(of: part).0
+
+                if name == part.parameter {
+                    string += ", \(name): \(part.swiftType)"
+                } else {
+                    string += ", \(name) \(part.parameter): \(part.swiftType)"
+                }
             }
+
+            let subName = firstSubName.map { $0 + ": " } ?? ""
+            string += """
+                ) -> PandaChain {
+                        object.set\(firstName)(\(subName)\(firstPart.parameter)
+                """
+
+            for part in method.parts.dropFirst() {
+                string += ", \(type.swiftNames(of: part).0): \(part.parameter)"
+            }
+
+            string += """
+                )
+                        return self
+                    }\n\n
+                """
+
+            return string
         }
-
-        let subName = firstSubName.map { $0 + ": " } ?? ""
-        string += """
-            ) -> PandaChain {
-                    object.set\(firstName)(\(subName)\(firstPart.parameter)
-            """
-
-        for part in method.parts.dropFirst() {
-            string += ", \(type.swiftNames(of: part).0): \(part.parameter)"
-        }
-
-        string += """
-            )
-                    return self
-                }\n\n
-            """
-
-        return string
     }
 
     private func methodForMultiple(_ method: Method, type: Type) -> String {
         guard let multipleType = method.multipleType else { return "" }
+        let available = availableAttribute(of: method, indent: true)
         let values = multipleType.values
         let firstPart = method.parts[0]
         let firstName = type.swiftNames(of: firstPart).0
-        let methodName = initialLowercase(firstName)
+        let methodName = firstName.initialLowercased()
         var parameterType = firstPart.swiftType
 
         if parameterType.last! == "?" {
             parameterType.removeLast()
         }
 
-        var string = availableAttribute(of: method, indent: true)
+        return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
+            var string = available
 
-        string += """
-                @discardableResult
-                public func \(methodName)(
-                    _ \(parameterName(values[0])): \(parameterType)
-            """
-
-        for value in values.dropFirst() {
             string += """
-                ,
-                        \(value): \(parameterType)? = nil
+                    @discardableResult
+                    public func \(name)(
+                        _ \(parameterName(values[0])): \(parameterType)
                 """
-        }
 
-        string += "\n"
-        string += """
-                ) -> PandaChain {
-                    return \(multipleType.methodName)(\n
-            """
+            for value in values.dropFirst() {
+                string += """
+                    ,
+                            \(value): \(parameterType)? = nil
+                    """
+            }
 
-        for value in values {
+            string += "\n"
             string += """
-                            \(value): \(parameterName(value)),\n
+                    ) -> PandaChain {
+                        return \(multipleType.methodName)(\n
                 """
+
+            for value in values {
+                string += """
+                                \(value): \(parameterName(value)),\n
+                    """
+            }
+
+            string += """
+                            setter: object.set\(firstName)
+                        )
+                    }\n\n
+                """
+
+            return string
         }
-
-        string += """
-                        setter: object.set\(firstName)
-                    )
-                }\n\n
-            """
-
-        return string
     }
 
     private func footer() -> String {
         return "}\n"
+    }
+
+    private func fullFunction(type: Type,
+                              methodName: String,
+                              originalName: String,
+                              body: (String) -> String) -> String {
+        let customName = type.customName(methodName)
+        var string = ""
+
+        if customName != methodName {
+            string += "    /// `\(originalName)`\n"
+            string += body(customName)
+            string += "    @available(*, deprecated, renamed: \"\(customName)()\")\n"
+        }
+
+        string += body(methodName)
+        return string
     }
 
     private func availableAttribute(of a: Available, indent: Bool) -> String {
@@ -188,12 +213,6 @@ class Generator {
         } else {
             return ""
         }
-    }
-
-    private func initialLowercase(_ string: String) -> String {
-        let index = string.index { $0.isLowercase } ?? string.endIndex
-        let range = string.startIndex..<index
-        return string.replacingCharacters(in: range, with: string[range].lowercased())
     }
 
     private func parameterName(_ name: String) -> String {

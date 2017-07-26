@@ -44,6 +44,10 @@ extension String {
         return index(offset >= 0 ? startIndex : endIndex, offsetBy: offset)
     }
 
+    func indexRange(_ range: Range<Int>) -> Range<Index> {
+        return index(range.lowerBound)..<index(range.upperBound)
+    }
+
     func substrings(_ result: NSTextCheckingResult) -> [String] {
         return (0..<result.numberOfRanges).map { index in
             let range = result.range(at: index)
@@ -54,5 +58,11 @@ extension String {
                 return ""
             }
         }
+    }
+
+    func initialLowercased() -> String {
+        let i = index { $0.isLowercase } ?? endIndex
+        let range = startIndex..<i
+        return replacingCharacters(in: range, with: self[range].lowercased())
     }
 }

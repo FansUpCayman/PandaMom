@@ -105,10 +105,6 @@ struct Config {
 
     static let propertyNameMap = [
         "UIBezierPath.CGPath": "cgPath",
-        "UIDocumentInteractionController.URL": "url",
-        "UIDocumentInteractionController.UTI": "uti",
-        "UIPasteboard.URL": "url",
-        "UIPasteboard.URLs": "urls",
         "UIPopoverController.popoverBackgroundViewClass": "backgroundViewClass",
         "UIPopoverController.popoverContentSize": "contentSize",
         "UIPopoverController.popoverLayoutMargins": "layoutMargins",
@@ -130,5 +126,110 @@ struct Config {
 
     static let escapings: Set = [
         "UIAccessibilityCustomRotorSearch",
+    ]
+
+    static let customNameRules = [
+        ("backgroundcolor", 10..<15),
+        ("backgroundimage", 10..<15),
+        ("backgroundview", 10..<14),
+        ("layoutmargins", 0..<6),
+        ("maximum", 3..<7),
+        ("minimum", 3..<7),
+        ("numberof", 0..<8),
+        ("scalefactor", 5..<11),
+        ("textattributes", 0..<4),
+        ("timingfunction", 6..<14),
+        ("tintcolor", 4..<9),
+    ]
+
+    static let customNameMap = [
+        // CABasicAnimation
+        "byValue": "by",
+        "fromValue": "from",
+        "toValue": "to",
+
+        // CALayer
+        "allowsEdgeAntialiasing": "edgeAntialiasable",
+        "masksToBounds": "masks",
+        "shouldRasterize": "rasterized",
+
+        // UIButton
+        "contentEdgeInsets": "contentInsets",
+        "imageEdgeInsets": "imageInsets",
+        "titleEdgeInsets": "titleInsets",
+
+        // UICollectionView
+        "allowsMultipleSelection": "multiSelectable",
+        "allowsSelection": "selectable",
+        "prefetchDataSource": "prefetchSource",
+        "prefetchingEnabled": "prefetchs",
+        "remembersLastFocusedIndexPath": "remembersLastFocus",
+
+        // UICollectionViewFlowLayout
+        "footerReferenceSize": "footerSize",
+        "headerReferenceSize": "headerSize",
+        "scrollDirection": "direction",
+        "sectionFootersPinToVisibleBounds": "footersPinned",
+        "sectionHeadersPinToVisibleBounds": "headersPinned",
+
+        // UIControl
+        "contentHorizontalAlignment": "horizontalAlignment",
+        "contentVerticalAlignment": "verticalAlignment",
+
+        // UILabel
+        "adjustsFontSizeToFitWidth": "adjustsFontSize",
+        "allowsDefaultTighteningForTruncation": "tightenable",
+        "highlightedTextColor": "highlightedColor",
+        "lineBreakMode": "lineBreak",
+        "preferredMaxLayoutWidth": "maxWidth",
+        "textAlignment": "alignment",
+        "textColor": "color",
+
+        // UINavigationBar
+        "barStyle": "style",
+
+        // UIScrollView
+        "directionalLockEnabled": "directionLocked",
+        "pagingEnabled": "paged",
+        "scrollEnabled": "scrollable",
+        "scrollIndicatorInsets": "indicatorInsets",
+        "showsHorizontalScrollIndicator": "showsHorizontalIndicator",
+        "showsVerticalScrollIndicator": "showsVerticalIndicator",
+
+        // UIStackView
+        "baselineRelativeArrangement": "baselineArrangement",
+        "layoutMarginsRelativeArrangement": "marginsArrangement",
+
+        // UITableView
+        "allowsSelectionDuringEditing": "selectableDuringEditing",
+        "allowsMultipleSelectionDuringEditing": "multiSelectableDuringEditing",
+        "estimatedSectionFooterHeight": "estimatedFooterHeight",
+        "estimatedSectionHeaderHeight": "estimatedHeaderHeight",
+        "sectionFooterHeight": "footerHeight",
+        "sectionHeaderHeight": "headerHeight",
+
+        // UITextField
+        "allowsEditingTextAttributes": "attributesEditable",
+
+        // UITextView
+        "textContainerInset": "containerInset",
+
+        // UIView
+        "autoresizesSubviews": "autoresizes",
+        "autoresizingMask": "autoresizing",
+        "clearsContextBeforeDrawing": "clearsContext",
+        "clipsToBounds": "clips",
+        "contentCompressionResistancePriority": "compressionResistancePriority",
+        "contentHuggingPriority": "huggingPriority",
+        "contentMode": "mode",
+        "multipleTouchEnabled": "multiTouchable",
+        "semanticContentAttribute": "semantics",
+        "tintAdjustmentMode": "tintAdjustment",
+        "translatesAutoresizingMaskIntoConstraints": "translatesAutoresizing",
+        "userInteractionEnabled": "interactable",
+
+        // Exceptions
+        "badgeTextAttributes": "badgeTextAttributes",
+        "showsNumberOfCopies": "showsNumberOfCopies",
     ]
 }

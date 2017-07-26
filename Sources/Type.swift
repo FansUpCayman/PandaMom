@@ -105,8 +105,12 @@ struct Type {
         if let result = getterRegex.firstMatch(in: attributes, range: NSRange(0..<attributes.count)) {
             return attributes.substrings(result)[1]
         } else {
-            return Config.propertyNameMap[fullname(property.name)] ?? property.name
+            return swiftNameWithoutPrefix(of: property)
         }
+    }
+
+    func swiftNameWithoutPrefix(of property: Property) -> String {
+        return Config.propertyNameMap[fullname(property.name)] ?? property.name.initialLowercased()
     }
 
     func swiftNames(of part: Method.Part) -> (String, String?) {
@@ -143,6 +147,34 @@ struct Type {
         }
     }
 
+    func customName(_ methodName: String) -> String {
+        if let name = Config.customNameMap[methodName] {
+            return name
+        }
+
+        let lowercaseName = methodName.lowercased()
+        var customName = methodName
+
+        if customName.count >= name.count &&
+            lowercaseName.hasPrefix(name.dropFirst(2).lowercased()) {
+            customName.removeFirst(name.count - 2)
+        }
+
+        if lowercaseName.hasSuffix("identifier") {
+            customName.removeLast(10)
+            customName.append("ID")
+        }
+
+        for (string, range) in Config.customNameRules {
+            guard let foundRange = customName.lowercased().range(of: string) else { continue }
+            let start = customName.index(foundRange.lowerBound, offsetBy: range.lowerBound)
+            let end = customName.index(foundRange.lowerBound, offsetBy: range.upperBound)
+            customName.removeSubrange(start..<end)
+        }
+
+        return customName.initialLowercased()
+    }
+
     private func fullname(_ subName: String) -> String {
         return "\(name).\(subName)"
     }
@@ -152,6 +184,7 @@ extension Type {
     static func + (lhs: Type, rhs: Type) -> Type {
         var type = lhs
         type.add(rhs.properties)
+        type.add(rhs.methods)
         return type
     }
 }
