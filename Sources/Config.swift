@@ -88,6 +88,7 @@ struct Config {
         "UIViewController.disablesAutomaticKeyboardDismissal",
 
         "UILabel.font",
+        "UISimpleTextPrintFormatter.font",
         "UITextField.font",
         "UITextView.font",
 
@@ -129,6 +130,9 @@ struct Config {
     ]
 
     static let customNameRules = [
+        ("alignment", 5..<9),
+        ("adjustment", 6..<10),
+        ("arrangement", 7..<11),
         ("backgroundcolor", 10..<15),
         ("backgroundimage", 10..<15),
         ("backgroundview", 10..<14),
@@ -173,8 +177,11 @@ struct Config {
         "sectionHeadersPinToVisibleBounds": "headersPinned",
 
         // UIControl
-        "contentHorizontalAlignment": "horizontalAlignment",
-        "contentVerticalAlignment": "verticalAlignment",
+        "contentHorizontalAlignment": "horizontalAlign",
+        "contentVerticalAlignment": "verticalAlign",
+
+        // UIGestureRecognizer
+        "requiresExclusiveTouchType": "exclusiveTouchType",
 
         // UILabel
         "adjustsFontSizeToFitWidth": "adjustsFontSize",
@@ -182,8 +189,11 @@ struct Config {
         "highlightedTextColor": "highlightedColor",
         "lineBreakMode": "lineBreak",
         "preferredMaxLayoutWidth": "maxWidth",
-        "textAlignment": "alignment",
+        "textAlignment": "align",
         "textColor": "color",
+
+        // UILongPressGestureRecognizer
+        "minimumPressDuration": "minDuration",
 
         // UINavigationBar
         "barStyle": "style",
@@ -197,8 +207,8 @@ struct Config {
         "showsVerticalScrollIndicator": "showsVerticalIndicator",
 
         // UIStackView
-        "baselineRelativeArrangement": "baselineArrangement",
-        "layoutMarginsRelativeArrangement": "marginsArrangement",
+        "baselineRelativeArrangement": "baselineArrange",
+        "layoutMarginsRelativeArrangement": "marginsArrange",
 
         // UITableView
         "allowsSelectionDuringEditing": "selectableDuringEditing",
@@ -207,6 +217,10 @@ struct Config {
         "estimatedSectionHeaderHeight": "estimatedHeaderHeight",
         "sectionFooterHeight": "footerHeight",
         "sectionHeaderHeight": "headerHeight",
+
+        // UITapGestureRecognizer
+        "numberOfTapsRequired": "taps",
+        "numberOfTouchesRequired": "touches",
 
         // UITextField
         "allowsEditingTextAttributes": "attributesEditable",
@@ -219,12 +233,12 @@ struct Config {
         "autoresizingMask": "autoresizing",
         "clearsContextBeforeDrawing": "clearsContext",
         "clipsToBounds": "clips",
-        "contentCompressionResistancePriority": "compressionResistancePriority",
+        "contentCompressionResistancePriority": "resistancePriority",
         "contentHuggingPriority": "huggingPriority",
         "contentMode": "mode",
         "multipleTouchEnabled": "multiTouchable",
         "semanticContentAttribute": "semantics",
-        "tintAdjustmentMode": "tintAdjustment",
+        "tintAdjustmentMode": "tintAdjust",
         "translatesAutoresizingMaskIntoConstraints": "translatesAutoresizing",
         "userInteractionEnabled": "interactable",
 
