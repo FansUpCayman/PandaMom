@@ -37,6 +37,4 @@ struct Property {
     }
 }
 
-extension Property: Available {
-    var isClass: Bool { return false }
-}
+extension Property: Available {}

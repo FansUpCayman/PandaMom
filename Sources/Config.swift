@@ -45,6 +45,9 @@ struct Config {
         "double": "Double",
         "SEL": "Selector",
         "NSCalendarUnit": "NSCalendar.Unit",
+        "NSGlyphProperty": "NSLayoutManager.GlyphProperty",
+        "UIDocumentBrowserUserInterfaceStyle": "UIDocumentBrowserViewController.BrowserUserInterfaceStyle",
+        "UINavigationItemLargeTitleDisplayMode": "UINavigationItem.LargeTitleDisplayMode",
     ]
 
     static let genericMap = [
@@ -135,10 +138,13 @@ struct Config {
     ]
 
     static let methodNameMap = [
-        "CALayer.setNeedsDisplayInRect": "NeedsDisplayIn",
-        "UIPopoverController.setContentViewController": "ContentView",
-        "UIPopoverController.setPopoverContentSize": "ContentSize",
-        "UIView.setNeedsDisplayInRect": "NeedsDisplay",
+        "CALayer.setNeedsDisplayInRect": ("NeedsDisplay", nil),
+        "UIPopoverController.setContentViewController": ("ContentView", nil),
+        "UIPopoverController.setPopoverContentSize": ("ContentSize", nil),
+        "UITextPasteItem.setAttachmentResult": ("Result", "attachment"),
+        "UITextPasteItem.setAttributedStringResult": ("Result", "attributedString"),
+        "UITextPasteItem.setStringResult": ("Result", "string"),
+        "UIView.setNeedsDisplayInRect": ("NeedsDisplay", nil),
     ]
 
     static let frameworkMap = [
@@ -150,20 +156,24 @@ struct Config {
     ]
 
     static let customNameRules = [
-        ("alignment", 5..<9),
-        ("adjustment", 6..<10),
-        ("arrangement", 7..<11),
-        ("backgroundcolor", 10..<15),
-        ("backgroundimage", 10..<15),
-        ("backgroundview", 10..<14),
-        ("layoutmargins", 0..<6),
-        ("maximum", 3..<7),
-        ("minimum", 3..<7),
-        ("numberof", 0..<8),
-        ("scalefactor", 5..<11),
-        ("textattributes", 0..<4),
-        ("timingfunction", 6..<14),
-        ("tintcolor", 4..<9),
+        "alignment": "Align",
+        "adjustment": "Adjust",
+        "arrangement": "Arrange",
+        "backgroundcolor": "Background",
+        "backgroundimage": "Background",
+        "backgroundview": "Background",
+        "identifier": "ID",
+        "largecontentsizeimage": "LargeImage",
+        "layoutmargins": "Margins",
+        "maximum": "Max",
+        "minimum": "Min",
+        "numberof": "",
+        "scalefactor": "Scale",
+        "scrollindicator": "Indicator",
+        "textattributes": "Attributes",
+        "timingfunction": "Timing",
+        "tintcolor": "Tint",
+        "userinteractionenabled": "Interactable",
     ]
 
     static let customNameMap = [
@@ -185,6 +195,7 @@ struct Config {
         // UICollectionView
         "allowsMultipleSelection": "multiSelectable",
         "allowsSelection": "selectable",
+        "dragInteractionEnabled": "draggable",
         "prefetchDataSource": "prefetchSource",
         "prefetchingEnabled": "prefetchs",
         "remembersLastFocusedIndexPath": "remembersLastFocus",
@@ -218,13 +229,14 @@ struct Config {
         // UINavigationBar
         "barStyle": "style",
 
+        // UINavigationItem
+        "largeTitleDisplayMode": "largeTitleMode",
+
         // UIScrollView
+        "contentInsetAdjustmentBehavior": "contentInsetAdjust",
         "directionalLockEnabled": "directionLocked",
         "pagingEnabled": "paged",
         "scrollEnabled": "scrollable",
-        "scrollIndicatorInsets": "indicatorInsets",
-        "showsHorizontalScrollIndicator": "showsHorizontalIndicator",
-        "showsVerticalScrollIndicator": "showsVerticalIndicator",
 
         // UIStackView
         "baselineRelativeArrangement": "baselineArrange",
@@ -260,7 +272,6 @@ struct Config {
         "semanticContentAttribute": "semantics",
         "tintAdjustmentMode": "tintAdjust",
         "translatesAutoresizingMaskIntoConstraints": "translatesAutoresizing",
-        "userInteractionEnabled": "interactable",
 
         // Exceptions
         "badgeTextAttributes": "badgeTextAttributes",

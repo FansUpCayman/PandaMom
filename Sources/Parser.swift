@@ -27,11 +27,11 @@ import Foundation
 
 private let typePattern = "[\\w\\s\\*<>_,]+"
 private let methodPartPattern = "(\\w+):\\((\(typePattern))\\)(\\w+)"
-private let macrosPattern = "[\\w\\s\\d\\(\\)_,]*"
+private let macrosPattern = "[\\w\\s\\d\\(\\)_,.]*"
 private let fullMacrosPattern = "(\(macrosPattern)(?:\".*\")?\(macrosPattern))"
 
 private let interfaceRegex = try! NSRegularExpression(
-    pattern: "(CLASS.+\\n?)?@(?:interface|protocol)\\s+(\\w+)[^;\\n]*$",
+    pattern: "((?:CLASS|API).+\\n?)?@(?:interface|protocol)\\s+(\\w+)[^;\\n]*$",
     options: [.caseInsensitive, .anchorsMatchLines]
 )
 private let endRegex = try! NSRegularExpression(pattern: "@end", options: .caseInsensitive)

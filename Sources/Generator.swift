@@ -94,11 +94,13 @@ class Generator {
         let methodName = firstName.initialLowercased()
 
         return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
+            let firstFullName = firstSubName == firstPart.parameter ?
+                firstPart.parameter : "\(firstSubName ?? "_") \(firstPart.parameter)"
             var string = available
 
             string += """
                     @discardableResult
-                    public func \(name)(\(firstSubName ?? "_") \(firstPart.parameter): \(firstPart.swiftType)
+                    public func \(name)(\(firstFullName): \(firstPart.swiftType)
                 """
 
             for part in method.parts.dropFirst() {

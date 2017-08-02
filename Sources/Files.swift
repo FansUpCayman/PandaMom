@@ -26,17 +26,28 @@
 import Foundation
 
 class Files {
-    private let sourcePathFormat = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform" +
-        "/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/%@.framework/Headers"
+    private let sourcePathFormat = "/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform" +
+        "/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/%@.framework"
     private let outputPath = try! FileManager.default
         .url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         .appendingPathComponent("PandaMom")
 
     func sourceFiles(framework: String) -> [String] {
-        let path = String(format: sourcePathFormat, framework)
-        return try! FileManager.default
-            .contentsOfDirectory(atPath: path)
-            .map { (path as NSString).appendingPathComponent($0) }
+        let frameworkPath = String(format: sourcePathFormat, framework)
+        let subFrameworkPath = frameworkPath + "/Frameworks"
+        var headersPaths = [frameworkPath + "/Headers"]
+
+        if FileManager.default.fileExists(atPath: subFrameworkPath) {
+            headersPaths += try! FileManager.default
+                .contentsOfDirectory(atPath: subFrameworkPath)
+                .map { (subFrameworkPath as NSString).appendingPathComponent($0 + "/Headers") }
+        }
+
+        return headersPaths.flatMap { path in
+            try! FileManager.default
+                .contentsOfDirectory(atPath: path)
+                .map { (path as NSString).appendingPathComponent($0) }
+        }
     }
 
     func createOutputDirectory(framework: String) {

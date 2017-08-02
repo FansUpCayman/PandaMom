@@ -67,6 +67,4 @@ struct Method {
     }
 }
 
-extension Method: Available {
-    var isClass: Bool { return false }
-}
+extension Method: Available {}

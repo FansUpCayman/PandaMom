@@ -115,11 +115,11 @@ struct Type {
 
     func swiftNames(of part: Method.Part) -> (String, String?) {
         if let n = Config.methodNameMap[fullname("set" + part.name)] {
-            return (n, nil)
+            return n
         } else if part.name.hasSuffix("AtIndex") {
             return (part.name.substring(to: part.name.index(-5)), nil)
         } else {
-            let prepositions = ["For", "With", "In"]
+            let prepositions = ["For", "With", "In", "After"]
 
             for preposition in prepositions {
                 var index: String.Index?
@@ -160,16 +160,9 @@ struct Type {
             customName.removeFirst(name.count - 2)
         }
 
-        if lowercaseName.hasSuffix("identifier") {
-            customName.removeLast(10)
-            customName.append("ID")
-        }
-
-        for (string, range) in Config.customNameRules {
-            guard let foundRange = customName.lowercased().range(of: string) else { continue }
-            let start = customName.index(foundRange.lowerBound, offsetBy: range.lowerBound)
-            let end = customName.index(foundRange.lowerBound, offsetBy: range.upperBound)
-            customName.removeSubrange(start..<end)
+        for (string, custom) in Config.customNameRules {
+            guard let range = customName.lowercased().range(of: string) else { continue }
+            customName.replaceSubrange(range, with: custom)
         }
 
         return customName.initialLowercased()
@@ -189,6 +182,4 @@ extension Type {
     }
 }
 
-extension Type: Available {
-    var isClass: Bool { return true }
-}
+extension Type: Available {}

@@ -77,7 +77,7 @@ class TypeParser {
             case "0"..."9", "a"..."z", "A"..."Z", "_":
                 let kindof = "__kindof"
                 let const = "const"
-                let nullables = ["nullable", "__nullable"]
+                let nullables = ["nullable", "__nullable", "_Nullable"]
                 let restString = string[index..<string.endIndex]
                 var shouldSkip = false
 

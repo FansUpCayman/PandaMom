@@ -25,26 +25,24 @@
 
 import Foundation
 
-private let generalAvailableRegexes = availableRegexes(prefix: "AVAILABLE")
-private let classAvailableRegexes = availableRegexes(prefix: "CLASS_AVAILABLE")
-private let generalDeprecatedRegex = deprecatedRegex(prefix: "DEPRECATED")
-private let classDeprecatedRegex = deprecatedRegex(prefix: "CLASS_DEPRECATED")
-
 private let capturedVersion = "(\\d+)[_.](\\d+)"
+private let doubleVersion = "\(capturedVersion)\\s*,\\s*\(capturedVersion)"
 
-private func availableRegexes(prefix: String) -> [NSRegularExpression] {
-    return [
-        try! NSRegularExpression(pattern: "\(prefix)_IOS[\\w_]*\\s*\\(\(capturedVersion)",
-                                 options: .caseInsensitive),
-        try! NSRegularExpression(pattern: "\(prefix)\\s*\\(\\d+[_.]\\d+\\s*,\\s*\(capturedVersion)",
-                                 options: .caseInsensitive),
-    ]
-}
+private let availableRegexes = [
+    try! NSRegularExpression(pattern: "AVAILABLE_IOS[\\w_]*\\s*\\(\(capturedVersion)",
+                             options: .caseInsensitive),
+    try! NSRegularExpression(pattern: "AVAILABLE\\s*\\(\\d+[_.]\\d+\\s*,\\s*\(capturedVersion)",
+                             options: .caseInsensitive),
+    try! NSRegularExpression(pattern: "API_AVAILABLE\\(ios\\(\(capturedVersion)",
+                             options: .caseInsensitive),
+]
 
-private func deprecatedRegex(prefix: String) -> NSRegularExpression {
-    return try! NSRegularExpression(pattern: "\(prefix)_IOS\\s*\\(\(capturedVersion)\\s*,\\s*\(capturedVersion)",
-                                    options: .caseInsensitive)
-}
+private let deprecatedRegexes = [
+    try! NSRegularExpression(pattern: "DEPRECATED_IOS\\s*\\(\(doubleVersion)",
+                             options: .caseInsensitive),
+    try! NSRegularExpression(pattern: "API_DEPRECATED[\\w_]*\\(.*ios\\(\(doubleVersion)",
+                             options: .caseInsensitive),
+]
 
 enum Deprecated {
     case yes
@@ -54,24 +52,12 @@ enum Deprecated {
 
 protocol Available {
     var macros: String { get }
-    var isClass: Bool { get }
 }
 
 extension Available {
     var available: String? {
-        let regexes = isClass ? classAvailableRegexes : generalAvailableRegexes
-        var result: NSTextCheckingResult?
-
-        for regex in regexes {
-            result = regex.firstMatch(in: macros, range: NSRange(0..<macros.count))
-
-            if result != nil {
-                break
-            }
-        }
-
-        guard let r = result else { return nil }
-        let substrings = macros.substrings(r)
+        guard let result = matchMacros(availableRegexes) else { return nil }
+        let substrings = macros.substrings(result)
         let major = Int(substrings[1])!
         let minor = Int(substrings[2])!
         guard isHigherThanMinimum(major: major, minor: minor) else { return nil }
@@ -79,8 +65,7 @@ extension Available {
     }
 
     var deprecated: Deprecated {
-        let regex = isClass ? classDeprecatedRegex : generalDeprecatedRegex
-        guard let result = regex.firstMatch(in: macros, range: NSRange(0..<macros.count)) else { return .no }
+        guard let result = matchMacros(deprecatedRegexes) else { return .no }
         let substrings = macros.substrings(result)
         let introducedMajor = Int(substrings[1])!
         let introducedMinor = Int(substrings[2])!
@@ -95,6 +80,18 @@ extension Available {
         case .yes: return true
         default: return false
         }
+    }
+
+    private func matchMacros(_ regexes: [NSRegularExpression]) -> NSTextCheckingResult? {
+        for regex in regexes {
+            let result = regex.firstMatch(in: macros, range: NSRange(0..<macros.count))
+
+            if result != nil {
+                return result
+            }
+        }
+
+        return nil
     }
 
     private func isHigherThanMinimum(major: Int, minor: Int) -> Bool {
