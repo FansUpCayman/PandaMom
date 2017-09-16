@@ -117,7 +117,7 @@ struct Type {
         if let n = Config.methodNameMap[fullname("set" + part.name)] {
             return n
         } else if part.name.hasSuffix("AtIndex") {
-            return (part.name.substring(to: part.name.index(-5)), nil)
+            return (String(part.name[..<part.name.index(-5)]), nil)
         } else {
             let prepositions = ["For", "With", "In", "After"]
 
@@ -131,15 +131,15 @@ struct Type {
                 }
 
                 guard let i = index, part.name[i].isUppercase else { continue }
-                let suffix = part.name.substring(from: i).lowercased()
+                let suffix = part.name[i...].lowercased()
 
                 guard part.type.lowercased().contains(suffix) else { continue }
 
                 if part.name.first!.isUppercase {
                     let endIndex = part.name.index(i, offsetBy: -preposition.count)
-                    return (part.name.substring(to: endIndex), preposition.lowercased())
+                    return (String(part.name[..<endIndex]), preposition.lowercased())
                 } else {
-                    return (part.name.substring(to: i), nil)
+                    return (String(part.name[..<i]), nil)
                 }
             }
 

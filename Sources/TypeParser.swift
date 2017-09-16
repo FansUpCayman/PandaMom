@@ -144,9 +144,9 @@ class TypeParser {
         if let t = Config.typeMap[name] {
             swiftName = t
         } else if Config.prefixStrippings.contains(name) {
-            swiftName = name.substring(from: name.index(2))
+            swiftName = String(name[name.index(2)...])
         } else if name.hasSuffix("Ref") && name != "CFTypeRef" {
-            swiftName = name.substring(to: name.index(-3))
+            swiftName = String(name[..<name.index(-3)])
         } else {
             swiftName = name
         }

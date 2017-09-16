@@ -26,7 +26,7 @@
 import Foundation
 
 class Files {
-    private let sourcePathFormat = "/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform" +
+    private let sourcePathFormat = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform" +
         "/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/%@.framework"
     private let outputPath = try! FileManager.default
         .url(for: .desktopDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
