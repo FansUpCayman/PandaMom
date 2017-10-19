@@ -25,8 +25,14 @@
 
 import Foundation
 
+private let arrayRegex = try! NSRegularExpression(pattern: "\\[(\\w+)\\]", options: .caseInsensitive)
 private let closureRegex = try! NSRegularExpression(pattern: "(\\w+)\\s+\\(\\^\\w+\\)\\((\\w*)\\)",
                                                     options: .caseInsensitive)
+
+struct ElementType {
+    var name: String
+    var isArray: Bool
+}
 
 private class ParserType {
     var name: String
@@ -43,6 +49,16 @@ private class ParserType {
 }
 
 class TypeParser {
+    func elementType(_ type: String) -> ElementType {
+        if let result = arrayRegex.firstMatch(in: type, range: NSRange(0..<type.count)) {
+            return ElementType(name: type.substrings(result)[1], isArray: true)
+        } else if type.hasSuffix("?") {
+            return ElementType(name: String(type.dropLast()), isArray: false)
+        } else {
+            return ElementType(name: type, isArray: false)
+        }
+    }
+
     func parse(_ string: String) -> (name: String, isClosure: Bool) {
         if string.contains("^") {
             return (parseClosure(string), true)

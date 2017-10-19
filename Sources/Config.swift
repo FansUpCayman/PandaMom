@@ -86,11 +86,7 @@ struct Config {
     ]
 
     static let excludedProperties: Set = [
-        "CAAnimationGroup.animations",
-
         "CATransition.filter",
-
-        "UIBarButtonItemGroup.barButtonItems",
 
         "UIGestureRecognizer.state",
 
@@ -99,29 +95,11 @@ struct Config {
         "UITextField.font",
         "UITextView.font",
 
-        "UINavigationItem.backBarButtonItem",
-        "UINavigationItem.leftBarButtonItems",
-        "UINavigationItem.leftBarButtonItem",
-        "UINavigationItem.rightBarButtonItems",
-        "UINavigationItem.rightBarButtonItem",
-
-        "UIToolbar.items",
-
         "UIViewController.disablesAutomaticKeyboardDismissal",
-        "UIViewController.toolbarItems",
     ]
 
     static let excludedMethods: Set = [
-        "UINavigationItem.setLeftBarButtonItems",
-        "UINavigationItem.setLeftBarButtonItem",
-        "UINavigationItem.setRightBarButtonItems",
-        "UINavigationItem.setRightBarButtonItem",
-
         "UITextChecker.setIgnoredWords",
-
-        "UIToolbar.setItems",
-
-        "UIViewController.setToolbarItems",
     ]
 
     static let optionalMap = [
@@ -139,6 +117,8 @@ struct Config {
 
     static let methodNameMap = [
         "CALayer.setNeedsDisplayInRect": ("NeedsDisplay", nil),
+        "UINavigationItem.setLeftBarButtonItem": ("LeftBarButton", nil),
+        "UINavigationItem.setRightBarButtonItem": ("RightBarButton", nil),
         "UIPopoverController.setContentViewController": ("ContentView", nil),
         "UIPopoverController.setPopoverContentSize": ("ContentSize", nil),
         "UITextPasteItem.setAttachmentResult": ("Result", "attachment"),
@@ -187,6 +167,9 @@ struct Config {
         "masksToBounds": "masks",
         "shouldRasterize": "rasterized",
 
+        // UIBarButtonItemGroup
+        "barButtonItems": "items",
+
         // UIButton
         "contentEdgeInsets": "contentInsets",
         "imageEdgeInsets": "imageInsets",
@@ -230,7 +213,14 @@ struct Config {
         "barStyle": "style",
 
         // UINavigationItem
+        "backBarButtonItem": "backItem",
         "largeTitleDisplayMode": "largeTitleMode",
+        "leftBarButton": "leftItem",
+        "leftBarButtonItem": "leftItem",
+        "leftBarButtonItems": "leftItems",
+        "rightBarButton": "rightItem",
+        "rightBarButtonItem": "rightItem",
+        "rightBarButtonItems": "rightItems",
 
         // UIScrollView
         "contentInsetAdjustmentBehavior": "contentInsetAdjust",

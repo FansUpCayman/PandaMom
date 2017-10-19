@@ -46,12 +46,15 @@ struct Method {
 
     struct Part {
         var name: String
+        var subname: String?
         var type: String
         var parameter: String
+        var elementType: ElementType?
 
-        var swiftType: String {
-            let parser = TypeParser()
-            return parser.parse(type).name
+        init(name: String, type: String, parameter: String) {
+            self.name = name
+            self.type = type
+            self.parameter = parameter
         }
     }
 

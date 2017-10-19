@@ -63,24 +63,36 @@ class Generator {
             string += "import \(framework)\n"
         }
 
+        let available = availableAttribute(of: type, indent: false)
+
+        if type.isConvertible {
+            string += "\n"
+            string += available
+            string += "public protocol \(type.name)Convertible {}\n\n"
+            string += available
+            string += "extension \(type.name): \(type.name)Convertible {}\n"
+            string += available
+            string += "extension PandaChain: \(type.name)Convertible {}\n"
+        }
+
         string += "\n"
-        string += availableAttribute(of: type, indent: false)
+        string += available
         string += "extension PandaChain where Object: \(type.name) {\n"
         return string
     }
 
     private func property(_ property: Property, type: Type) -> String {
         let available = availableAttribute(of: property, indent: true)
-        let methodName = type.swiftNameWithoutPrefix(of: property)
-        let originalName = type.swiftName(of: property)
-        let propertyType = type.swiftType(of: property)
         let attributes = property.isEscaping ? "@escaping " : ""
+        let (propertyType, expression) = convertibleStuff(type: property.type,
+                                                     elementType: property.elementType,
+                                                     parameter: "value")
 
-        return fullFunction(type: type, methodName: methodName, originalName: originalName) { name in
+        return fullFunction(type: type, methodName: property.nameWithoutPrefix, originalName: property.name) { name in
             available + """
                     @discardableResult
                     public func \(name)(_ value: \(attributes)\(propertyType)) -> PandaChain {
-                        object.\(originalName) = value
+                        object.\(property.name) = \(expression)
                         return self
                     }\n\n
                 """
@@ -90,37 +102,37 @@ class Generator {
     private func method(_ method: Method, type: Type) -> String {
         let available = availableAttribute(of: method, indent: true)
         let firstPart = method.parts[0]
-        let (firstName, firstSubName) = type.swiftNames(of: firstPart)
-        let methodName = firstName.initialLowercased()
+        let methodName = firstPart.name.initialLowercased()
+        let (firstPartType, expression) = convertibleStuff(type: firstPart.type,
+                                                      elementType: firstPart.elementType,
+                                                      parameter: firstPart.parameter)
 
         return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
-            let firstFullName = firstSubName == firstPart.parameter ?
-                firstPart.parameter : "\(firstSubName ?? "_") \(firstPart.parameter)"
+            let firstFullName = firstPart.subname == firstPart.parameter ?
+                firstPart.parameter : "\(firstPart.subname ?? "_") \(firstPart.parameter)"
             var string = available
 
             string += """
                     @discardableResult
-                    public func \(name)(\(firstFullName): \(firstPart.swiftType)
+                    public func \(name)(\(firstFullName): \(firstPartType)
                 """
 
             for part in method.parts.dropFirst() {
-                let name = type.swiftNames(of: part).0
-
-                if name == part.parameter {
-                    string += ", \(name): \(part.swiftType)"
+                if part.name == part.parameter {
+                    string += ", \(part.name): \(part.type)"
                 } else {
-                    string += ", \(name) \(part.parameter): \(part.swiftType)"
+                    string += ", \(part.name) \(part.parameter): \(part.type)"
                 }
             }
 
-            let subName = firstSubName.map { $0 + ": " } ?? ""
+            let subName = firstPart.subname.map { $0 + ": " } ?? ""
             string += """
                 ) -> PandaChain {
-                        object.set\(firstName)(\(subName)\(firstPart.parameter)
+                        object.set\(firstPart.name)(\(subName)\(expression)
                 """
 
             for part in method.parts.dropFirst() {
-                string += ", \(type.swiftNames(of: part).0): \(part.parameter)"
+                string += ", \(part.name): \(part.parameter)"
             }
 
             string += """
@@ -138,9 +150,8 @@ class Generator {
         let available = availableAttribute(of: method, indent: true)
         let values = multipleType.values
         let firstPart = method.parts[0]
-        let firstName = type.swiftNames(of: firstPart).0
-        let methodName = firstName.initialLowercased()
-        var parameterType = firstPart.swiftType
+        let methodName = firstPart.name.initialLowercased()
+        var parameterType = firstPart.type
 
         if parameterType.last! == "?" {
             parameterType.removeLast()
@@ -175,7 +186,7 @@ class Generator {
             }
 
             string += """
-                            setter: object.set\(firstName)
+                            setter: object.set\(firstPart.name)
                         )
                     }\n\n
                 """
@@ -203,6 +214,28 @@ class Generator {
 
         string += body(methodName)
         return string
+    }
+
+    private func convertibleStuff(type: String,
+                                  elementType: ElementType?,
+                                  parameter: String) -> (type: String, expression: String) {
+        let newType: String
+        let expression: String
+
+        if let elementType = elementType {
+            newType = type.replacingOccurrences(of: elementType.name, with: elementType.name + "Convertible")
+
+            if elementType.isArray {
+                expression = "unboxArray(\(parameter))"
+            } else {
+                expression = "unbox(\(parameter))"
+            }
+        } else {
+            newType = type
+            expression = parameter
+        }
+
+        return (newType, expression)
     }
 
     private func availableAttribute(of a: Available, indent: Bool) -> String {

@@ -25,6 +25,33 @@
 
 import Foundation
 
+private func markContainers(_ types: [String: Type]) -> [String: Type] {
+    let parser = TypeParser()
+    var types = types
+
+    for (name, type) in types {
+        for (index, property) in type.properties.enumerated() {
+            let elementType = parser.elementType(property.type)
+
+            if types[elementType.name] != nil {
+                types[elementType.name]!.isConvertible = true
+                types[name]!.properties[index].elementType = elementType
+            }
+        }
+
+        for (index, method) in type.methods.enumerated() {
+            let elementType = parser.elementType(method.parts[0].type)
+
+            if types[elementType.name] != nil {
+                types[elementType.name]!.isConvertible = true
+                types[name]!.methods[index].parts[0].elementType = elementType
+            }
+        }
+    }
+
+    return types
+}
+
 let startDate = Date()
 
 let files = Files()
@@ -44,6 +71,7 @@ for framework in Config.frameworks {
 
     print("Generating \(framework)")
 
+    types = markContainers(types)
     files.createOutputDirectory(framework: framework)
 
     for (name, type) in types {

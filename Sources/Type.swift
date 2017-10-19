@@ -30,8 +30,9 @@ private let getterRegex = try! NSRegularExpression(pattern: "getter\\s*=\\s*(\\w
 struct Type {
     var name: String
     var macros: String
-    var properties: [Property]
-    var methods: [Method]
+    var properties = [Property]()
+    var methods = [Method]()
+    var isConvertible = false
 
     var isValid: Bool {
         return !isDeprecated && !Config.excludedTypes.contains(name)
@@ -58,15 +59,30 @@ struct Type {
     init(name: String, macros: String = "") {
         self.name = name
         self.macros = macros
-        properties = []
-        methods = []
     }
 
     mutating func add(_ p: [Property]) {
+        var p = p
+
+        for (index, property) in p.enumerated() {
+            p[index].type = swiftType(of: property)
+            p[index].name = swiftName(of: property)
+            p[index].nameWithoutPrefix = swiftNameWithoutPrefix(of: property)
+        }
+
         properties.append(contentsOf: p)
     }
 
     mutating func add(_ m: [Method]) {
+        var m = m
+
+        for (i, method) in m.enumerated() {
+            for (j, part) in method.parts.enumerated() {
+                (m[i].parts[j].name, m[i].parts[j].subname) = swiftNames(of: part)
+                m[i].parts[j].type = swiftType(of: part)
+            }
+        }
+
         methods.append(contentsOf: m)
     }
 
@@ -83,7 +99,28 @@ struct Type {
             !Config.excludedMethods.contains(fullname("set" + method.parts[0].name))
     }
 
-    func swiftType(of property: Property) -> String {
+    func customName(_ methodName: String) -> String {
+        if let name = Config.customNameMap[methodName] {
+            return name
+        }
+
+        let lowercaseName = methodName.lowercased()
+        var customName = methodName
+
+        if customName.count >= name.count &&
+            lowercaseName.hasPrefix(name.dropFirst(2).lowercased()) {
+            customName.removeFirst(name.count - 2)
+        }
+
+        for (string, custom) in Config.customNameRules {
+            guard let range = customName.lowercased().range(of: string) else { continue }
+            customName.replaceSubrange(range, with: custom)
+        }
+
+        return customName.initialLowercased()
+    }
+
+    private func swiftType(of property: Property) -> String {
         let parser = TypeParser()
         let (name, isClosure) = parser.parse(property.type)
         var fullType = Config.typeExceptions[fullname(property.name)] ?? name
@@ -99,7 +136,7 @@ struct Type {
         return fullType
     }
 
-    func swiftName(of property: Property) -> String {
+    private func swiftName(of property: Property) -> String {
         let attributes = property.attributes
 
         if let result = getterRegex.firstMatch(in: attributes, range: NSRange(0..<attributes.count)) {
@@ -109,11 +146,11 @@ struct Type {
         }
     }
 
-    func swiftNameWithoutPrefix(of property: Property) -> String {
+    private func swiftNameWithoutPrefix(of property: Property) -> String {
         return Config.propertyNameMap[fullname(property.name)] ?? property.name.initialLowercased()
     }
 
-    func swiftNames(of part: Method.Part) -> (String, String?) {
+    private func swiftNames(of part: Method.Part) -> (String, String?) {
         if let n = Config.methodNameMap[fullname("set" + part.name)] {
             return n
         } else if part.name.hasSuffix("AtIndex") {
@@ -147,25 +184,9 @@ struct Type {
         }
     }
 
-    func customName(_ methodName: String) -> String {
-        if let name = Config.customNameMap[methodName] {
-            return name
-        }
-
-        let lowercaseName = methodName.lowercased()
-        var customName = methodName
-
-        if customName.count >= name.count &&
-            lowercaseName.hasPrefix(name.dropFirst(2).lowercased()) {
-            customName.removeFirst(name.count - 2)
-        }
-
-        for (string, custom) in Config.customNameRules {
-            guard let range = customName.lowercased().range(of: string) else { continue }
-            customName.replaceSubrange(range, with: custom)
-        }
-
-        return customName.initialLowercased()
+    private func swiftType(of part: Method.Part) -> String {
+        let parser = TypeParser()
+        return parser.parse(part.type).name
     }
 
     private func fullname(_ subName: String) -> String {
@@ -176,8 +197,8 @@ struct Type {
 extension Type {
     static func + (lhs: Type, rhs: Type) -> Type {
         var type = lhs
-        type.add(rhs.properties)
-        type.add(rhs.methods)
+        type.properties.append(contentsOf: rhs.properties)
+        type.methods.append(contentsOf: rhs.methods)
         return type
     }
 }
