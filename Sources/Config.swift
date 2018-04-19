@@ -26,12 +26,23 @@
 import Foundation
 
 struct Config {
-    static let minimumMajorVersion = 8
+    static let minimumMajorVersion = 9
     static let minimumMinorVersion = 0
 
     static let frameworks = [
-        "QuartzCore",
         "UIKit",
+    ]
+
+    static let types: Set = [
+        "NSObject",
+        "UIResponder",
+    ]
+
+    static let superTypes: Set = [
+        "UICollectionReusableView",
+        "UIControl",
+        "UIScrollView",
+        "UIView",
     ]
 
     static let typeMap = [
@@ -44,10 +55,6 @@ struct Config {
         "float": "Float",
         "double": "Double",
         "SEL": "Selector",
-        "NSCalendarUnit": "NSCalendar.Unit",
-        "NSGlyphProperty": "NSLayoutManager.GlyphProperty",
-        "UIDocumentBrowserUserInterfaceStyle": "UIDocumentBrowserViewController.BrowserUserInterfaceStyle",
-        "UINavigationItemLargeTitleDisplayMode": "UINavigationItem.LargeTitleDisplayMode",
     ]
 
     static let genericMap = [
@@ -73,33 +80,14 @@ struct Config {
         "NSURL",
     ]
 
-    static let typeExceptions = [
-        "UIAccessibilityElement.accessibilityContainer": "AnyObject",
-        "UIAccessibilityCustomAction.target": "AnyObject",
-        "UIAlertView.delegate": "AnyObject",
-        "UIBarButtonItem.target": "AnyObject",
-    ]
-
-    static let excludedTypes: Set = [
-        "CAEmitterBehavior",
-        "CAMetalLayer",
-    ]
-
     static let excludedProperties: Set = [
-        "CATransition.filter",
-
-        "UIGestureRecognizer.state",
-
         "UILabel.font",
         "UISimpleTextPrintFormatter.font",
         "UITextField.font",
         "UITextView.font",
-
-        "UIViewController.disablesAutomaticKeyboardDismissal",
     ]
 
-    static let excludedMethods: Set = [
-        "UITextChecker.setIgnoredWords",
+    static let excludedMethods: Set<String> = [
     ]
 
     static let optionalMap = [
@@ -108,31 +96,7 @@ struct Config {
     ]
 
     static let propertyNameMap = [
-        "UIBezierPath.CGPath": "cgPath",
-        "UIPopoverController.popoverBackgroundViewClass": "backgroundViewClass",
-        "UIPopoverController.popoverContentSize": "contentSize",
-        "UIPopoverController.popoverLayoutMargins": "layoutMargins",
         "UIView.maskView": "mask",
-    ]
-
-    static let methodNameMap = [
-        "CALayer.setNeedsDisplayInRect": ("NeedsDisplay", nil),
-        "UINavigationItem.setLeftBarButtonItem": ("LeftBarButton", nil),
-        "UINavigationItem.setRightBarButtonItem": ("RightBarButton", nil),
-        "UIPopoverController.setContentViewController": ("ContentView", nil),
-        "UIPopoverController.setPopoverContentSize": ("ContentSize", nil),
-        "UITextPasteItem.setAttachmentResult": ("Result", "attachment"),
-        "UITextPasteItem.setAttributedStringResult": ("Result", "attributedString"),
-        "UITextPasteItem.setStringResult": ("Result", "string"),
-        "UIView.setNeedsDisplayInRect": ("NeedsDisplay", nil),
-    ]
-
-    static let frameworkMap = [
-        "CL": "CoreLocation",
-    ]
-
-    static let escapings: Set = [
-        "UIAccessibilityCustomRotorSearch",
     ]
 
     static let customNameRules = [
@@ -143,7 +107,6 @@ struct Config {
         "backgroundimage": "Background",
         "backgroundview": "Background",
         "identifier": "ID",
-        "largecontentsizeimage": "LargeImage",
         "layoutmargins": "Margins",
         "maximum": "Max",
         "minimum": "Min",
@@ -151,25 +114,11 @@ struct Config {
         "scalefactor": "Scale",
         "scrollindicator": "Indicator",
         "textattributes": "Attributes",
-        "timingfunction": "Timing",
         "tintcolor": "Tint",
         "userinteractionenabled": "Interactable",
     ]
 
     static let customNameMap = [
-        // CABasicAnimation
-        "byValue": "by",
-        "fromValue": "from",
-        "toValue": "to",
-
-        // CALayer
-        "allowsEdgeAntialiasing": "edgeAntialiasable",
-        "masksToBounds": "masks",
-        "shouldRasterize": "rasterized",
-
-        // UIBarButtonItemGroup
-        "barButtonItems": "items",
-
         // UIButton
         "contentEdgeInsets": "contentInsets",
         "imageEdgeInsets": "imageInsets",
@@ -183,19 +132,9 @@ struct Config {
         "prefetchingEnabled": "prefetchs",
         "remembersLastFocusedIndexPath": "remembersLastFocus",
 
-        // UICollectionViewFlowLayout
-        "footerReferenceSize": "footerSize",
-        "headerReferenceSize": "headerSize",
-        "scrollDirection": "direction",
-        "sectionFootersPinToVisibleBounds": "footersPinned",
-        "sectionHeadersPinToVisibleBounds": "headersPinned",
-
         // UIControl
         "contentHorizontalAlignment": "horizontalAlign",
         "contentVerticalAlignment": "verticalAlign",
-
-        // UIGestureRecognizer
-        "requiresExclusiveTouchType": "exclusiveTouchType",
 
         // UILabel
         "adjustsFontSizeToFitWidth": "adjustsFontSize",
@@ -206,21 +145,8 @@ struct Config {
         "textAlignment": "align",
         "textColor": "color",
 
-        // UILongPressGestureRecognizer
-        "minimumPressDuration": "minDuration",
-
         // UINavigationBar
         "barStyle": "style",
-
-        // UINavigationItem
-        "backBarButtonItem": "backItem",
-        "largeTitleDisplayMode": "largeTitleMode",
-        "leftBarButton": "leftItem",
-        "leftBarButtonItem": "leftItem",
-        "leftBarButtonItems": "leftItems",
-        "rightBarButton": "rightItem",
-        "rightBarButtonItem": "rightItem",
-        "rightBarButtonItems": "rightItems",
 
         // UIScrollView
         "contentInsetAdjustmentBehavior": "contentInsetAdjust",
@@ -240,10 +166,6 @@ struct Config {
         "sectionFooterHeight": "footerHeight",
         "sectionHeaderHeight": "headerHeight",
 
-        // UITapGestureRecognizer
-        "numberOfTapsRequired": "taps",
-        "numberOfTouchesRequired": "touches",
-
         // UITextField
         "allowsEditingTextAttributes": "attributesEditable",
 
@@ -255,16 +177,10 @@ struct Config {
         "autoresizingMask": "autoresizing",
         "clearsContextBeforeDrawing": "clearsContext",
         "clipsToBounds": "clips",
-        "contentCompressionResistancePriority": "resistancePriority",
-        "contentHuggingPriority": "huggingPriority",
         "contentMode": "mode",
         "multipleTouchEnabled": "multiTouchable",
         "semanticContentAttribute": "semantics",
         "tintAdjustmentMode": "tintAdjust",
         "translatesAutoresizingMaskIntoConstraints": "translatesAutoresizing",
-
-        // Exceptions
-        "badgeTextAttributes": "badgeTextAttributes",
-        "showsNumberOfCopies": "showsNumberOfCopies",
     ]
 }

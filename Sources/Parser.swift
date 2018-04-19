@@ -31,7 +31,7 @@ private let macrosPattern = "[\\w\\s\\d\\(\\)_,.]*"
 private let fullMacrosPattern = "(\(macrosPattern)(?:\".*\")?\(macrosPattern))"
 
 private let interfaceRegex = try! NSRegularExpression(
-    pattern: "((?:CLASS|API).+\\n?)?@(?:interface|protocol)\\s+(\\w+)[^;\\n]*$",
+    pattern: "((?:CLASS|API).+\\n?)?@(?:interface|protocol)\\s+(\\w+)\\s*(?::\\s*(\\w+))?[^;\\n]*$",
     options: [.caseInsensitive, .anchorsMatchLines]
 )
 private let endRegex = try! NSRegularExpression(pattern: "@end", options: .caseInsensitive)
@@ -79,7 +79,8 @@ class Parser {
 
         while let result = interfaceRegex.firstMatch(in: string, range: NSRange(index..<string.length)) {
             let substrings = string.substrings(result)
-            let type = Type(name: substrings[2], macros: substrings[1])
+            let superType = substrings.indices.contains(3) ? substrings[3] : ""
+            let type = Type(name: substrings[2], superType: superType, macros: substrings[1])
 
             guard type.isValid else {
                 index = result.range.upperBound

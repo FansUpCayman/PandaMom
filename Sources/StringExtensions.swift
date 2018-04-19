@@ -65,4 +65,9 @@ extension String {
         let range = startIndex..<i
         return replacingCharacters(in: range, with: self[range].lowercased())
     }
+
+    func initialUppercased() -> String {
+        let range = indexRange(0..<1)
+        return replacingCharacters(in: range, with: self[range].uppercased())
+    }
 }

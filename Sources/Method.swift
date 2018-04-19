@@ -36,12 +36,6 @@ struct Method {
             case .barMetrics: return ["default", "compact", "defaultPrompt", "compactPrompt"]
             }
         }
-
-        var methodName: String {
-            var name = rawValue
-            name.removeFirst(2)
-            return "for" + name
-        }
     }
 
     struct Part {
@@ -49,7 +43,6 @@ struct Method {
         var subname: String?
         var type: String
         var parameter: String
-        var elementType: ElementType?
 
         init(name: String, type: String, parameter: String) {
             self.name = name

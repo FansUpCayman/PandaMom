@@ -29,35 +29,28 @@ private let getterRegex = try! NSRegularExpression(pattern: "getter\\s*=\\s*(\\w
 
 struct Type {
     var name: String
+    var superType: String
     var macros: String
     var properties = [Property]()
     var methods = [Method]()
-    var isConvertible = false
 
     var isValid: Bool {
-        return !isDeprecated && !Config.excludedTypes.contains(name)
+        return (
+            Config.types.contains(name) ||
+                Config.superTypes.contains(name) ||
+                Config.superTypes.contains(superType) ||
+                Config.optionalMap[name] != nil
+            ) &&
+            !isDeprecated
     }
 
     var typesIfOptional: [String]? {
         return Config.optionalMap[name]
     }
 
-    var imports: Set<String> {
-        var imports = Set<String>()
-
-        for property in properties {
-            let prefix = String(property.type.prefix(2))
-
-            if let framework = Config.frameworkMap[prefix] {
-                imports.insert(framework)
-            }
-        }
-
-        return imports
-    }
-
-    init(name: String, macros: String = "") {
+    init(name: String, superType: String = "", macros: String = "") {
         self.name = name
+        self.superType = superType
         self.macros = macros
     }
 
@@ -123,7 +116,7 @@ struct Type {
     private func swiftType(of property: Property) -> String {
         let parser = TypeParser()
         let (name, isClosure) = parser.parse(property.type)
-        var fullType = Config.typeExceptions[fullname(property.name)] ?? name
+        var fullType = name
 
         if property.attributes.contains("nullable") || property.attributes.contains("null_resettable") {
             if isClosure {
@@ -151,9 +144,7 @@ struct Type {
     }
 
     private func swiftNames(of part: Method.Part) -> (String, String?) {
-        if let n = Config.methodNameMap[fullname("set" + part.name)] {
-            return n
-        } else if part.name.hasSuffix("AtIndex") {
+        if part.name.hasSuffix("AtIndex") {
             return (String(part.name[..<part.name.index(-5)]), nil)
         } else {
             let prepositions = ["For", "With", "In", "After"]

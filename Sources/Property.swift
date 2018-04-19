@@ -31,12 +31,6 @@ struct Property {
     var name: String
     var nameWithoutPrefix: String
     var macros: String
-    var elementType: ElementType?
-
-    var isEscaping: Bool {
-        let mainType = type.components(separatedBy: " ")[0]
-        return Config.escapings.contains(mainType)
-    }
 
     init(attributes: String, type: String, name: String, macros: String) {
         self.attributes = attributes

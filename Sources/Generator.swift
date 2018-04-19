@@ -33,9 +33,9 @@ class Generator {
             string += property(p, type: type)
         }
 
-        for m in type.methods {
-            string += method(m, type: type)
-        }
+//        for m in type.methods {
+//            string += method(m, type: type)
+//        }
 
         for m in type.methods {
             string += methodForMultiple(m, type: type)
@@ -59,41 +59,22 @@ class Generator {
             import \(framework)\n
             """
 
-        for framework in type.imports {
-            string += "import \(framework)\n"
-        }
-
-        let available = availableAttribute(of: type, indent: false)
-
-        if type.isConvertible {
-            string += "\n"
-            string += available
-            string += "public protocol \(type.name)Convertible {}\n\n"
-            string += available
-            string += "extension \(type.name): \(type.name)Convertible {}\n"
-            string += available
-            string += "extension PandaChain: \(type.name)Convertible {}\n"
-        }
-
         string += "\n"
-        string += available
-        string += "extension PandaChain where Object: \(type.name) {\n"
+        string += availableAttribute(of: type, indent: false)
+        string += "extension Element where Object: \(type.name) {\n"
         return string
     }
 
     private func property(_ property: Property, type: Type) -> String {
         let available = availableAttribute(of: property, indent: true)
-        let attributes = property.isEscaping ? "@escaping " : ""
-        let (propertyType, expression) = convertibleStuff(type: property.type,
-                                                     elementType: property.elementType,
-                                                     parameter: "value")
 
         return fullFunction(type: type, methodName: property.nameWithoutPrefix, originalName: property.name) { name in
             available + """
                     @discardableResult
-                    public func \(name)(_ value: \(attributes)\(propertyType)) -> PandaChain {
-                        object.\(property.name) = \(expression)
-                        return self
+                    public func \(name)(_ value: \(property.type)) -> Self {
+                        return addAttributes(key: "\(property.name)", value: value) {
+                            $0.\(property.name) = value
+                        }
                     }\n\n
                 """
         }
@@ -103,9 +84,6 @@ class Generator {
         let available = availableAttribute(of: method, indent: true)
         let firstPart = method.parts[0]
         let methodName = firstPart.name.initialLowercased()
-        let (firstPartType, expression) = convertibleStuff(type: firstPart.type,
-                                                      elementType: firstPart.elementType,
-                                                      parameter: firstPart.parameter)
 
         return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
             let firstFullName = firstPart.subname == firstPart.parameter ?
@@ -114,7 +92,7 @@ class Generator {
 
             string += """
                     @discardableResult
-                    public func \(name)(\(firstFullName): \(firstPartType)
+                    public func \(name)(\(firstFullName): \(firstPart.type)
                 """
 
             for part in method.parts.dropFirst() {
@@ -127,8 +105,9 @@ class Generator {
 
             let subName = firstPart.subname.map { $0 + ": " } ?? ""
             string += """
-                ) -> PandaChain {
-                        object.set\(firstPart.name)(\(subName)\(expression)
+                ) -> Self {
+                        return addChangingAttributes(key: "\(methodName)") {
+                            object.set\(firstPart.name)(\(subName)\(firstPart.parameter)
                 """
 
             for part in method.parts.dropFirst() {
@@ -137,7 +116,7 @@ class Generator {
 
             string += """
                 )
-                        return self
+                        }
                     }\n\n
                 """
 
@@ -151,48 +130,30 @@ class Generator {
         let values = multipleType.values
         let firstPart = method.parts[0]
         let methodName = firstPart.name.initialLowercased()
-        var parameterType = firstPart.type
+        var string = ""
 
-        if parameterType.last! == "?" {
-            parameterType.removeLast()
-        }
+        for (index, value) in values.enumerated() {
+            let upperValue = value.initialUppercased()
+            let suffix = index == 0 ? "" : upperValue
 
-        return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
-            var string = available
-
-            string += """
+            string += fullFunction(
+                type: type,
+                methodName: methodName,
+                originalName: methodName,
+                suffix: suffix
+            ) { name in
+                available + """
                     @discardableResult
-                    public func \(name)(
-                        _ \(parameterName(values[0])): \(parameterType)
-                """
-
-            for value in values.dropFirst() {
-                string += """
-                    ,
-                            \(value): \(parameterType)? = nil
-                    """
-            }
-
-            string += "\n"
-            string += """
-                    ) -> PandaChain {
-                        return \(multipleType.methodName)(\n
-                """
-
-            for value in values {
-                string += """
-                                \(value): \(parameterName(value)),\n
-                    """
-            }
-
-            string += """
-                            setter: object.set\(firstPart.name)
-                        )
+                    public func \(name)(_ value: \(firstPart.type)) -> Self {
+                        return addAttributes(key: "\(methodName)\(upperValue)", value: value) {
+                            $0.set\(firstPart.name)(value, \(method.parts[1].name): .\(value))
+                        }
                     }\n\n
                 """
-
-            return string
+            }
         }
+
+        return string
     }
 
     private func footer() -> String {
@@ -202,40 +163,19 @@ class Generator {
     private func fullFunction(type: Type,
                               methodName: String,
                               originalName: String,
+                              suffix: String = "",
                               body: (String) -> String) -> String {
         let customName = type.customName(methodName)
         var string = ""
 
         if customName != methodName {
-            string += "    /// `\(originalName)`\n"
-            string += body(customName)
-            string += "    @available(*, deprecated, renamed: \"\(customName)()\")\n"
+            string += "    /// `\(originalName)\(suffix)`\n"
+            string += body(customName + suffix)
+            string += "    @available(*, deprecated, renamed: \"\(customName)\(suffix)()\")\n"
         }
 
-        string += body(methodName)
+        string += body(methodName + suffix)
         return string
-    }
-
-    private func convertibleStuff(type: String,
-                                  elementType: ElementType?,
-                                  parameter: String) -> (type: String, expression: String) {
-        let newType: String
-        let expression: String
-
-        if let elementType = elementType {
-            newType = type.replacingOccurrences(of: elementType.name, with: elementType.name + "Convertible")
-
-            if elementType.isArray {
-                expression = "unboxArray(\(parameter))"
-            } else {
-                expression = "unbox(\(parameter))"
-            }
-        } else {
-            newType = type
-            expression = parameter
-        }
-
-        return (newType, expression)
     }
 
     private func availableAttribute(of a: Available, indent: Bool) -> String {
@@ -247,14 +187,6 @@ class Generator {
             return "\(indentString)@available(iOS, introduced: \(introduced), deprecated: \(deprecated))\n"
         } else {
             return ""
-        }
-    }
-
-    private func parameterName(_ name: String) -> String {
-        if name == "default" {
-            return "d"
-        } else {
-            return name
         }
     }
 }
