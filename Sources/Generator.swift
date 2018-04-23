@@ -69,14 +69,23 @@ class Generator {
         let available = availableAttribute(of: property, indent: true)
 
         return fullFunction(type: type, methodName: property.nameWithoutPrefix, originalName: property.name) { name in
-            available + """
-                    @discardableResult
-                    public func \(name)(_ value: \(property.type)) -> Self {
-                        return addAttributes(key: "\(property.name)", value: value) {
-                            $0.\(property.name) = value
-                        }
-                    }\n\n
-                """
+            var string = available
+            string += """
+                @discardableResult
+                public func \(name)(_ value: \(property.type)) -> Self {
+                    return addAttributes(key: "\(property.name)", value: value) {
+                        $0.\(property.name) = value\n
+            """
+
+            if type.isPropertyDirty(property) {
+                string += "            $0.invalidateLayout()\n"
+            }
+
+            string += """
+                    }
+                }\n\n
+            """
+            return string
         }
     }
 
@@ -142,14 +151,23 @@ class Generator {
                 originalName: methodName,
                 suffix: suffix
             ) { name in
-                available + """
+                var string = available
+                string += """
                     @discardableResult
                     public func \(name)(_ value: \(firstPart.type)) -> Self {
                         return addAttributes(key: "\(methodName)\(upperValue)", value: value) {
-                            $0.set\(firstPart.name)(value, \(method.parts[1].name): .\(value))
+                            $0.set\(firstPart.name)(value, \(method.parts[1].name): .\(value))\n
+                """
+
+                if type.isMethodDirty(method) {
+                    string += "            $0.invalidateLayout()\n"
+                }
+
+                string += """
                         }
                     }\n\n
                 """
+                return string
             }
         }
 

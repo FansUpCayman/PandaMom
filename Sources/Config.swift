@@ -183,4 +183,21 @@ struct Config {
         "tintAdjustmentMode": "tintAdjust",
         "translatesAutoresizingMaskIntoConstraints": "translatesAutoresizing",
     ]
+
+    static let dirtyNames: Set = [
+        "UIButton.contentEdgeInsets",
+        "UIButton.imageEdgeInsets",
+        "UIButton.titleEdgeInsets",
+        "UIButton.setAttributedTitle",
+        "UIButton.setImage",
+        "UIButton.setTitle",
+
+        "UIImageView.animationImages",
+        "UIImageView.highlightedImage",
+        "UIImageView.image",
+
+        "UILabel.attributedText",
+        "UILabel.numberOfLines",
+        "UILabel.text",
+    ]
 }

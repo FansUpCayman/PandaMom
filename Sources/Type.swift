@@ -92,6 +92,14 @@ struct Type {
             !Config.excludedMethods.contains(fullname("set" + method.parts[0].name))
     }
 
+    func isPropertyDirty(_ property: Property) -> Bool {
+        return Config.dirtyNames.contains(fullname(property.name))
+    }
+
+    func isMethodDirty(_ method: Method) -> Bool {
+        return Config.dirtyNames.contains(fullname("set" + method.parts[0].name))
+    }
+
     func customName(_ methodName: String) -> String {
         if let name = Config.customNameMap[methodName] {
             return name
