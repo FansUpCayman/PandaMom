@@ -66,71 +66,61 @@ class Generator {
     }
 
     private func property(_ property: Property, type: Type) -> String {
-        let available = availableAttribute(of: property, indent: true)
+        var string = availableAttribute(of: property, indent: true)
+        string += """
+            @discardableResult
+            public func \(property.nameWithoutPrefix)(_ value: \(property.type)) -> Self {
+                return addAttributes(key: "\(property.name)", value: value) {
+                    $0.\(property.name) = value\n
+        """
 
-        return fullFunction(type: type, methodName: property.nameWithoutPrefix, originalName: property.name) { name in
-            var string = available
-            string += """
-                @discardableResult
-                public func \(name)(_ value: \(property.type)) -> Self {
-                    return addAttributes(key: "\(property.name)", value: value) {
-                        $0.\(property.name) = value\n
-            """
-
-            if type.isPropertyDirty(property) {
-                string += "            $0.invalidateLayout()\n"
-            }
-
-            string += """
-                    }
-                }\n\n
-            """
-            return string
+        if type.isPropertyDirty(property) {
+            string += "            $0.invalidateLayout()\n"
         }
+
+        string += """
+                }
+            }\n\n
+        """
+        return string
     }
 
     private func method(_ method: Method, type: Type) -> String {
-        let available = availableAttribute(of: method, indent: true)
         let firstPart = method.parts[0]
         let methodName = firstPart.name.initialLowercased()
+        let firstFullName = firstPart.subname == firstPart.parameter ?
+            firstPart.parameter : "\(firstPart.subname ?? "_") \(firstPart.parameter)"
+        var string = availableAttribute(of: method, indent: true)
+        string += """
+                @discardableResult
+                public func \(methodName)(\(firstFullName): \(firstPart.type)
+            """
 
-        return fullFunction(type: type, methodName: methodName, originalName: methodName) { name in
-            let firstFullName = firstPart.subname == firstPart.parameter ?
-                firstPart.parameter : "\(firstPart.subname ?? "_") \(firstPart.parameter)"
-            var string = available
-
-            string += """
-                    @discardableResult
-                    public func \(name)(\(firstFullName): \(firstPart.type)
-                """
-
-            for part in method.parts.dropFirst() {
-                if part.name == part.parameter {
-                    string += ", \(part.name): \(part.type)"
-                } else {
-                    string += ", \(part.name) \(part.parameter): \(part.type)"
-                }
+        for part in method.parts.dropFirst() {
+            if part.name == part.parameter {
+                string += ", \(part.name): \(part.type)"
+            } else {
+                string += ", \(part.name) \(part.parameter): \(part.type)"
             }
-
-            let subName = firstPart.subname.map { $0 + ": " } ?? ""
-            string += """
-                ) -> Self {
-                        return addChangingAttributes(key: "\(methodName)") {
-                            object.set\(firstPart.name)(\(subName)\(firstPart.parameter)
-                """
-
-            for part in method.parts.dropFirst() {
-                string += ", \(part.name): \(part.parameter)"
-            }
-
-            string += """
-                )
-                        }
-                    }\n\n
-                """
-
-            return string
         }
+
+        let subName = firstPart.subname.map { $0 + ": " } ?? ""
+        string += """
+            ) -> Self {
+                    return addChangingAttributes(key: "\(methodName)") {
+                        object.set\(firstPart.name)(\(subName)\(firstPart.parameter)
+            """
+
+        for part in method.parts.dropFirst() {
+            string += ", \(part.name): \(part.parameter)"
+        }
+
+        string += """
+            )
+                    }
+                }\n\n
+            """
+        return string
     }
 
     private func methodForMultiple(_ method: Method, type: Type) -> String {
@@ -145,30 +135,22 @@ class Generator {
             let upperValue = value.initialUppercased()
             let suffix = index == 0 ? "" : upperValue
 
-            string += fullFunction(
-                type: type,
-                methodName: methodName,
-                originalName: methodName,
-                suffix: suffix
-            ) { name in
-                var string = available
-                string += """
-                    @discardableResult
-                    public func \(name)(_ value: \(firstPart.type)) -> Self {
-                        return addAttributes(key: "\(methodName)\(upperValue)", value: value) {
-                            $0.set\(firstPart.name)(value, \(method.parts[1].name): .\(value))\n
-                """
+            string += available
+            string += """
+                @discardableResult
+                public func \(methodName)\(suffix)(_ value: \(firstPart.type)) -> Self {
+                    return addAttributes(key: "\(methodName)\(upperValue)", value: value) {
+                        $0.set\(firstPart.name)(value, \(method.parts[1].name): .\(value))\n
+            """
 
-                if type.isMethodDirty(method) {
-                    string += "            $0.invalidateLayout()\n"
-                }
-
-                string += """
-                        }
-                    }\n\n
-                """
-                return string
+            if type.isMethodDirty(method) {
+                string += "            $0.invalidateLayout()\n"
             }
+
+            string += """
+                    }
+                }\n\n
+            """
         }
 
         return string
@@ -176,24 +158,6 @@ class Generator {
 
     private func footer() -> String {
         return "}\n"
-    }
-
-    private func fullFunction(type: Type,
-                              methodName: String,
-                              originalName: String,
-                              suffix: String = "",
-                              body: (String) -> String) -> String {
-        let customName = type.customName(methodName)
-        var string = ""
-
-        if customName != methodName {
-            string += "    /// `\(originalName)\(suffix)`\n"
-            string += body(customName + suffix)
-            string += "    @available(*, deprecated, renamed: \"\(customName)\(suffix)()\")\n"
-        }
-
-        string += body(methodName + suffix)
-        return string
     }
 
     private func availableAttribute(of a: Available, indent: Bool) -> String {

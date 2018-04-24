@@ -100,27 +100,6 @@ struct Type {
         return Config.dirtyNames.contains(fullname("set" + method.parts[0].name))
     }
 
-    func customName(_ methodName: String) -> String {
-        if let name = Config.customNameMap[methodName] {
-            return name
-        }
-
-        let lowercaseName = methodName.lowercased()
-        var customName = methodName
-
-        if customName.count >= name.count &&
-            lowercaseName.hasPrefix(name.dropFirst(2).lowercased()) {
-            customName.removeFirst(name.count - 2)
-        }
-
-        for (string, custom) in Config.customNameRules {
-            guard let range = customName.lowercased().range(of: string) else { continue }
-            customName.replaceSubrange(range, with: custom)
-        }
-
-        return customName.initialLowercased()
-    }
-
     private func swiftType(of property: Property) -> String {
         let parser = TypeParser()
         let (name, isClosure) = parser.parse(property.type)
