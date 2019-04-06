@@ -1,5 +1,5 @@
 //
-//  Property.swift
+//  main.swift
 //  PandaMom
 //
 //  Copyright (c) 2017 Javier Zhang (https://wordlessj.github.io/)
@@ -25,26 +25,30 @@
 
 import Foundation
 
-struct Property {
-    var attributes: String
-    var type: String
-    var name: String
-    var nameWithoutPrefix: String
-    var macros: String
-    var elementType: ElementType?
+let startDate = Date()
 
-    var isEscaping: Bool {
-        let mainType = type.components(separatedBy: " ")[0]
-        return Config.escapings.contains(mainType)
+for (framework, files) in sourceFiles() {
+    var typeCollection = TypeCollection()
+
+    print("Parsing \(framework)")
+
+    for file in files {
+        guard let content = try? String(contentsOf: file) else { continue }
+        typeCollection.add(parse(content))
     }
 
-    init(attributes: String, type: String, name: String, macros: String) {
-        self.attributes = attributes
-        self.type = type
-        self.name = name
-        self.macros = macros
-        nameWithoutPrefix = name
+    print("Generating \(framework)")
+
+    typeCollection.markContainers()
+    createOutputDirectory(framework: framework)
+
+    for (name, type) in typeCollection.types {
+        let string = generate(type: type, framework: framework)
+        save(string, framework: framework, name: name)
     }
 }
 
-extension Property: Available {}
+print("Completed!")
+
+let time = Date().timeIntervalSince(startDate)
+print(String(format: "Time: %.2fs", time))

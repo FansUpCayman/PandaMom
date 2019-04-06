@@ -1,5 +1,5 @@
 //
-//  Method.swift
+//  Config.swift
 //  PandaMom
 //
 //  Copyright (c) 2017 Javier Zhang (https://wordlessj.github.io/)
@@ -25,49 +25,26 @@
 
 import Foundation
 
-struct Method {
-    enum MultipleType: String {
-        case controlState = "UIControlState"
-        case barMetrics = "UIBarMetrics"
+struct Config {
+    static let minVersion = Version(major: 8, minor: 0)
 
-        var values: [String] {
-            switch self {
-            case .controlState: return ["normal", "highlighted", "selected", "disabled"]
-            case .barMetrics: return ["default", "compact", "defaultPrompt", "compactPrompt"]
-            }
-        }
+    static let excludedProperties: Set = [
+        "UILabel.font",
+        "UISimpleTextPrintFormatter.font",
+        "UITextField.font",
+        "UITextView.font",
+    ]
 
-        var methodName: String {
-            var name = rawValue
-            name.removeFirst(2)
-            return "for" + name
-        }
-    }
+    static let optionalMap = [
+        "UITextInput": ["UITextField", "UITextView"],
+        "UITextInputTraits": ["UISearchBar", "UITextField", "UITextView"],
+    ]
 
-    struct Part {
-        var name: String
-        var subname: String?
-        var type: String
-        var parameter: String
-        var elementType: ElementType?
+    static let frameworkMap = [
+        "CL": "CoreLocation",
+    ]
 
-        init(name: String, type: String, parameter: String) {
-            self.name = name
-            self.type = type
-            self.parameter = parameter
-        }
-    }
-
-    var parts: [Part]
-    var macros: String
-
-    var multipleType: MultipleType? {
-        if parts.count == 2, let type = MultipleType(rawValue: parts[1].type) {
-            return type
-        } else {
-            return nil
-        }
-    }
+    static let escapings: Set = [
+        "UIAccessibilityCustomRotor.Search",
+    ]
 }
-
-extension Method: Available {}

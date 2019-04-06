@@ -1,5 +1,5 @@
 //
-//  StringExtensions.swift
+//  Extensions.swift
 //  PandaMom
 //
 //  Copyright (c) 2017 Javier Zhang (https://wordlessj.github.io/)
@@ -25,43 +25,26 @@
 
 import Foundation
 
-extension Character {
-    var isLowercase: Bool {
-        return ("a"..."z").contains(self)
-    }
+extension Sequence {
+    func divide(_ isFirst: (Element) throws -> Bool) rethrows -> ([Element], [Element]) {
+        var first = [Element]()
+        var second = [Element]()
 
-    var isUppercase: Bool {
-        return ("A"..."Z").contains(self)
+        for element in self {
+            if try isFirst(element) {
+                first.append(element)
+            } else {
+                second.append(element)
+            }
+        }
+
+        return (first, second)
     }
 }
 
 extension String {
-    var length: Int {
-        return (self as NSString).length
-    }
-
-    func index(_ offset: Int) -> Index {
-        return index(offset >= 0 ? startIndex : endIndex, offsetBy: offset)
-    }
-
-    func indexRange(_ range: Range<Int>) -> Range<Index> {
-        return index(range.lowerBound)..<index(range.upperBound)
-    }
-
-    func substrings(_ result: NSTextCheckingResult) -> [String] {
-        return (0..<result.numberOfRanges).map { index in
-            let range = result.range(at: index)
-
-            if range.location != NSNotFound {
-                return (self as NSString).substring(with: range)
-            } else {
-                return ""
-            }
-        }
-    }
-
     func initialLowercased() -> String {
-        let i = index { $0.isLowercase } ?? endIndex
+        let i = firstIndex { $0.isLowercase } ?? endIndex
         let range = startIndex..<i
         return replacingCharacters(in: range, with: self[range].lowercased())
     }

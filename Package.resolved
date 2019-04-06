@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Regex",
+        "repositoryURL": "https://github.com/sharplet/Regex.git",
+        "state": {
+          "branch": null,
+          "revision": "3bf30ed3d28a98737ee7d8c11976e1d707ec168b",
+          "version": "2.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
